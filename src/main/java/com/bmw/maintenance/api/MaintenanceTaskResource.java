@@ -17,6 +17,9 @@ import jakarta.ws.rs.core.Response;
 
 import lombok.NoArgsConstructor;
 
+/**
+ * REST resource for managing maintenance tasks.
+ */
 @Transactional
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -32,6 +35,12 @@ public class MaintenanceTaskResource {
         this.maintenanceTaskService = maintenanceTaskService;
     }
 
+    /**
+     * Creates a new maintenance task.
+     *
+     * @param request request payload with task data
+     * @return HTTP 201 with created task identifier
+     */
     @POST
     @Path("/")
     public Response createTask(@Valid CreateTaskRequest request) {
@@ -40,6 +49,13 @@ public class MaintenanceTaskResource {
         return Response.status(Response.Status.CREATED).entity(taskId).build();
     }
 
+    /**
+     * Updates the status of an existing task.
+     *
+     * @param taskId task identifier
+     * @param request request payload with new status
+     * @return HTTP 204 on success
+     */
     @PUT
     @Path("/{taskId}/status")
     public Response updateStatus(@PathParam("taskId") String taskId, @Valid UpdateStatusRequest request) {
@@ -48,6 +64,13 @@ public class MaintenanceTaskResource {
         return Response.noContent().build();
     }
 
+    /**
+     * Adds or updates notes for a task.
+     *
+     * @param taskId task identifier
+     * @param request request payload with notes
+     * @return HTTP 204 on success
+     */
     @PUT
     @Path("/{taskId}/notes")
     public Response updateNotes(@PathParam("taskId") String taskId, @Valid UpdateNotesRequest request) {
@@ -56,17 +79,36 @@ public class MaintenanceTaskResource {
         return Response.noContent().build();
     }
 
+    /**
+     * Retrieves a task by its identifier.
+     *
+     * @param taskId task identifier
+     * @return HTTP 200 with task data
+     */
     @GET
     @Path("/{taskId}")
     public Response getTaskById(@PathParam("taskId") String taskId) {
         return Response.ok(maintenanceTaskService.getTaskById(taskId)).build();
     }
 
+    /**
+     * Lists tasks, optionally filtered by VIN.
+     *
+     * @param vin optional VIN filter
+     * @return HTTP 200 with list of tasks
+     */
     @GET
     public Response getAllTasks(@QueryParam("vin") String vin) {
         return Response.ok(maintenanceTaskService.listTasks(vin)).build();
     }
 
+    /**
+     * Request payload for creating a task.
+     *
+     * @param vin vehicle identification number
+     * @param type task type
+     * @param notes optional notes
+     */
     public record CreateTaskRequest(
             @NotBlank
             @Size(min = 17, max = 17, message = "VIN must be 17 characters")
@@ -77,7 +119,18 @@ public class MaintenanceTaskResource {
 
             String notes
     ) {}
+
+    /**
+     * Request payload for updating task status.
+     *
+     * @param status new task status
+     */
     public record UpdateStatusRequest( @NotNull(message = "Status is required") TaskStatus status ) {}
 
+    /**
+     * Request payload for updating task notes.
+     *
+     * @param notes task notes
+     */
     public record UpdateNotesRequest( @NotBlank(message = "Notes cannot be blank") String notes ) {}
 }

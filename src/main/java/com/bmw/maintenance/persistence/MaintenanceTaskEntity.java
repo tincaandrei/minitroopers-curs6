@@ -10,6 +10,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Persistence entity for maintenance tasks.
+ */
 @Getter
 @Setter
 @NoArgsConstructor

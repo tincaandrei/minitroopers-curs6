@@ -14,6 +14,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 
+/**
+ * In-memory implementation of {@link MaintenanceTasks} for managing maintenance tasks.
+ */
 @ApplicationScoped
 public class MaintenanceTaskInMemoryRepository implements MaintenanceTasks {
 

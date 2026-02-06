@@ -6,10 +6,19 @@ import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Maps uncaught exceptions to HTTP responses with a standardized error payload.
+ */
 @Provider
 @Slf4j
 public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
 
+    /**
+     * Converts an exception into an HTTP response with an error code and message.
+     *
+     * @param exception the thrown exception
+     * @return a mapped {@link Response}
+     */
     @Override
     public Response toResponse(Exception exception) {
         log.error("Exception occurred: ", exception);
@@ -41,5 +50,11 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
                 .build();
     }
 
+    /**
+     * Standard error payload for exception responses.
+     *
+     * @param code error code identifier
+     * @param message human-readable error message
+     */
     public record ErrorResponse(String code, String message) {}
 }

@@ -6,6 +6,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 import com.bmw.maintenance.domain.MaintenanceTask;
 
+/**
+ * Maps between {@link MaintenanceTaskEntity} and {@link com.bmw.maintenance.domain.MaintenanceTask}.
+ */
 @ApplicationScoped
 public class MaintenanceTaskMapperImpl implements MaintenanceTaskMapper {
 
