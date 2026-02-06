@@ -1,0 +1,277 @@
+openapi: 3.0.3
+info:
+  title: Maintenance Task API
+  description: API for managing vehicle maintenance tasks
+  version: 1.0.0
+  contact:
+    name: BMW Maintenance Team
+
+servers:
+  - url: http://localhost:8080/maintenance-service
+    description: Local development server
+
+tags:
+  - name: Maintenance Tasks
+    description: Operations for managing maintenance tasks
+
+paths:
+  /api/maintenance-tasks:
+    post:
+      tags:
+        - Maintenance Tasks
+      summary: Create a new maintenance task
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+            examples:
+              oilChange:
+                summary: Oil Change Task
+                value:
+                  vin: "WBA3B5C50DF123456"
+                  type: "OIL_CHANGE"
+                  notes: "Regular oil change service"
+              brakeInspection:
+                summary: Brake Inspection Task
+                value:
+                  vin: "WBA3B5C50DF123456"
+                  type: "BRAKE_INSPECTION"
+                  notes: "Annual brake inspection"
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
+              example: 12345
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags:
+        - Maintenance Tasks
+      summary: Get all maintenance tasks
+      operationId: getAllTasks
+      parameters:
+        - name: vin
+          in: query
+          description: Filter tasks by VIN
+          required: false
+          schema:
+            type: string
+            minLength: 17
+            maxLength: 17
+          example: "WBA3B5C50DF123456"
+      responses:
+        '200':
+          description: List of maintenance tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MaintenanceTask'
+
+  /api/maintenance-tasks/{taskId}:
+    get:
+      tags:
+        - Maintenance Tasks
+      summary: Get a maintenance task by ID
+      operationId: getTaskById
+      parameters:
+        - name: taskId
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: string
+          example: "12345"
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceTask'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/maintenance-tasks/{taskId}/status:
+    put:
+      tags:
+        - Maintenance Tasks
+      summary: Update task status
+      operationId: updateStatus
+      parameters:
+        - name: taskId
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: string
+          example: "12345"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStatusRequest'
+            examples:
+              completed:
+                summary: Mark as completed
+                value:
+                  status: "COMPLETED"
+              cancelled:
+                summary: Cancel task
+                value:
+                  status: "CANCELLED"
+      responses:
+        '204':
+          description: Status updated successfully
+        '400':
+          description: Invalid status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/maintenance-tasks/{taskId}/notes:
+    put:
+      tags:
+        - Maintenance Tasks
+      summary: Update task notes
+      operationId: updateNotes
+      parameters:
+        - name: taskId
+          in: path
+          description: Task ID
+          required: true
+          schema:
+            type: string
+          example: "12345"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNotesRequest'
+            example:
+              notes: "Parts replaced: oil filter, engine oil (5W-30)"
+      responses:
+        '204':
+          description: Notes updated successfully
+        '400':
+          description: Invalid notes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    CreateTaskRequest:
+      type: object
+      required:
+        - vin
+        - type
+      properties:
+        vin:
+          type: string
+          minLength: 17
+          maxLength: 17
+          description: Vehicle Identification Number
+          example: "WBA3B5C50DF123456"
+        type:
+          $ref: '#/components/schemas/TaskType'
+        notes:
+          type: string
+          description: Additional notes for the task
+          example: "Customer reported squeaking noise"
+
+    UpdateStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+
+    UpdateNotesRequest:
+      type: object
+      required:
+        - notes
+      properties:
+        notes:
+          type: string
+          minLength: 1
+          description: Task notes
+          example: "Service completed successfully"
+
+    MaintenanceTask:
+      type: object
+      properties:
+        taskId:
+          type: integer
+          format: int64
+          example: 12345
+        vin:
+          type: string
+          example: "WBA3B5C50DF123456"
+        type:
+          $ref: '#/components/schemas/TaskType'
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        notes:
+          type: string
+          example: "Regular maintenance"
+
+    TaskType:
+      type: string
+      enum:
+        - OIL_CHANGE
+        - BRAKE_INSPECTION
+      description: Type of maintenance task
+
+    TaskStatus:
+      type: string
+      enum:
+        - IN_PROGRESS
+        - COMPLETED
+        - CANCELLED
+        - PENDING
+      description: Current status of the task
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Task not found with id: 12345"
+        timestamp:
+          type: string
+          format: date-time
