@@ -48,7 +48,7 @@ public interface MaintenanceTasks {
      *
      * @return the list of tasks
      */
-    List<MaintenanceTask> findAll();
+    List<MaintenanceTask> getAllTasks();
 
     /**
      * Finds tasks by VIN.

@@ -1,6 +1,7 @@
-package com.bmw.maintenance.persistence;
+package com.bmw.maintenance.persistence.mapper;
 
 import com.bmw.maintenance.domain.MaintenanceTask;
+import com.bmw.maintenance.persistence.MaintenanceTaskEntity;
 
 /**
  * Maps between {@link MaintenanceTask} domain objects and {@link MaintenanceTaskEntity} persistence entities\.
@@ -9,16 +10,16 @@ public interface MaintenanceTaskMapper {
     /**
      * Converts a persistence entity to a domain object\.
      *
-     * @param entity the persistence entity
+     * @param schema the persistence entity
      * @return the domain object
      */
-    MaintenanceTask toDomain(MaintenanceTaskEntity entity);
+    MaintenanceTask toDomain(MaintenanceTaskSchemaVLatest.MaintenanceTask schema);
 
     /**
      * Converts a domain object to a persistence entity\.
      *
      * @param task the domain object
-     * @return the persistence entity
+     * @return the persistence schema
      */
-    MaintenanceTaskEntity toEntity(MaintenanceTask task);
+    MaintenanceTaskSchemaVLatest.MaintenanceTask toSchema(MaintenanceTask task);
 }

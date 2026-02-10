@@ -83,6 +83,6 @@ public class MaintenanceTaskService {
         if (vin != null && !vin.isBlank()) {
             return maintenanceTasks.findByVin(vin);
         }
-        return maintenanceTasks.findAll();
+        return maintenanceTasks.getAllTasks();
     }
 }

@@ -1,8 +1,11 @@
 package com.bmw.maintenance.persistence;
 
+import com.bmw.maintenance.commons.serialization.VersionedSchemaSerDes;
 import com.bmw.maintenance.domain.MaintenanceTask;
 import com.bmw.maintenance.domain.TaskStatus;
 import com.bmw.maintenance.domaininteraction.MaintenanceTasks;
+import com.bmw.maintenance.persistence.mapper.MaintenanceTaskMapper;
+import com.bmw.maintenance.persistence.mapper.MaintenanceTaskSchemaVLatest;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -23,20 +26,35 @@ public class MaintenanceTaskInMemoryRepository implements MaintenanceTasks {
     private final Map<Long, MaintenanceTaskEntity> storage = new ConcurrentHashMap<>();
     private final AtomicLong idCounter = new AtomicLong(1L);
     private final MaintenanceTaskMapper mapper;
+    private final VersionedSchemaSerDes<String> serializer;
 
     @Inject
-    public MaintenanceTaskInMemoryRepository(MaintenanceTaskMapper mapper) {
+    public MaintenanceTaskInMemoryRepository(MaintenanceTaskMapper mapper, VersionedSchemaSerDes<String> serializer) {
         this.mapper = mapper;
+        this.serializer = serializer;
     }
 
     @Override
     public MaintenanceTask create(MaintenanceTask task) {
-        MaintenanceTaskEntity entity = mapper.toEntity(task);
-        entity.setId(idCounter.getAndIncrement());
+        Long id = idCounter.getAndIncrement();
+
+        // Map domain to schema
+        MaintenanceTaskSchemaVLatest.MaintenanceTask schema = mapper.toSchema(task);
+        schema.setTaskId(id);
+
+        // Serialize schema
+        String serializedAggregate = serializer.serialize(schema);
+
+        // Create entity with serialized aggregate
+        MaintenanceTaskEntity entity = new MaintenanceTaskEntity();
+        entity.setId(id);
+        entity.setAggregate(serializedAggregate);
+        entity.setCreatedAt(LocalDateTime.now());
+        entity.setUpdatedAt(LocalDateTime.now());
 
         storage.put(entity.getId(), entity);
 
-        return mapper.toDomain(entity);
+        return mapper.toDomain(schema);
     }
 
     @Override
@@ -48,7 +66,11 @@ public class MaintenanceTaskInMemoryRepository implements MaintenanceTasks {
             throw new NotFoundException("Task not found: " + taskId);
         }
 
-        return mapper.toDomain(entity);
+        // Deserialize aggregate to schema
+        MaintenanceTaskSchemaVLatest.MaintenanceTask schema =
+            (MaintenanceTaskSchemaVLatest.MaintenanceTask) serializer.deserialize(entity.getAggregate());
+
+        return mapper.toDomain(schema);
     }
 
     @Override
@@ -60,11 +82,20 @@ public class MaintenanceTaskInMemoryRepository implements MaintenanceTasks {
             throw new NotFoundException("Task not found: " + taskId);
         }
 
-        entity.setStatus(newStatus);
+        // Deserialize aggregate to schema
+        MaintenanceTaskSchemaVLatest.MaintenanceTask schema =
+            (MaintenanceTaskSchemaVLatest.MaintenanceTask) serializer.deserialize(entity.getAggregate());
+
+        // Update schema
+        schema.setStatus(newStatus);
+
+        // Serialize updated schema
+        String serializedAggregate = serializer.serialize(schema);
+        entity.setAggregate(serializedAggregate);
         entity.setUpdatedAt(LocalDateTime.now());
 
         storage.put(id, entity);
-        return mapper.toDomain(entity);
+        return mapper.toDomain(schema);
     }
 
     @Override
@@ -76,26 +107,43 @@ public class MaintenanceTaskInMemoryRepository implements MaintenanceTasks {
             throw new NotFoundException("Task not found: " + taskId);
         }
 
-        entity.setNotes(notes);
+        // Deserialize aggregate to schema
+        MaintenanceTaskSchemaVLatest.MaintenanceTask schema =
+            (MaintenanceTaskSchemaVLatest.MaintenanceTask) serializer.deserialize(entity.getAggregate());
+
+        // Update schema
+        schema.setNotes(notes);
+
+        // Serialize updated schema
+        String serializedAggregate = serializer.serialize(schema);
+        entity.setAggregate(serializedAggregate);
         entity.setUpdatedAt(LocalDateTime.now());
 
         storage.put(id, entity);
 
-        return mapper.toDomain(entity);
+        return mapper.toDomain(schema);
     }
 
     @Override
-    public List<MaintenanceTask> findAll() {
+    public List<MaintenanceTask> getAllTasks() {
         return storage.values().stream()
-                .map(mapper::toDomain)
+                .map(entity -> {
+                    MaintenanceTaskSchemaVLatest.MaintenanceTask schema =
+                        (MaintenanceTaskSchemaVLatest.MaintenanceTask) serializer.deserialize(entity.getAggregate());
+                    return mapper.toDomain(schema);
+                })
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<MaintenanceTask> findByVin(String vin) {
         return storage.values().stream()
-                .filter(entity -> vin.equals(entity.getVin()))
-                .map(mapper::toDomain)
+                .map(entity -> {
+                    MaintenanceTaskSchemaVLatest.MaintenanceTask schema =
+                        (MaintenanceTaskSchemaVLatest.MaintenanceTask) serializer.deserialize(entity.getAggregate());
+                    return mapper.toDomain(schema);
+                })
+                .filter(task -> vin.equals(task.getVin()))
                 .collect(Collectors.toList());
     }
 
