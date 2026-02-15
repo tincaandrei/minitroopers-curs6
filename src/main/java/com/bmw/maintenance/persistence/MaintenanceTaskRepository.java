@@ -2,25 +2,30 @@ package com.bmw.maintenance.persistence;
 
 import com.bmw.maintenance.commons.serialization.VersionedSchemaSerDes;
 import com.bmw.maintenance.domain.MaintenanceTask;
-import com.bmw.maintenance.domain.TaskStatus;
+import com.bmw.maintenance.domain.enums.TaskStatus;
 import com.bmw.maintenance.domaininteraction.MaintenanceTasks;
 import com.bmw.maintenance.persistence.mapper.MaintenanceTaskMapper;
 import com.bmw.maintenance.persistence.mapper.MaintenanceTaskSchemaVLatest;
+import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
-import net.bytebuddy.asm.Advice;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+
+@ApplicationScoped
 public class MaintenanceTaskRepository implements MaintenanceTasks {
 
 
     private final MaintenanceTaskMapper mapper;
     private final VersionedSchemaSerDes<String > serializer;
     private final MaintenanceTaskPanacheRepository repository;
+    private final AtomicLong idCounter = new AtomicLong(1L);
 
     @Inject
     public MaintenanceTaskRepository(MaintenanceTaskMapper mapper, VersionedSchemaSerDes<String> serializer,
@@ -33,20 +38,29 @@ public class MaintenanceTaskRepository implements MaintenanceTasks {
     @Override
     @Transactional
     public MaintenanceTask create(MaintenanceTask task) {
+
+        Long id = idCounter.getAndIncrement();
+
         // map domain to schema
         MaintenanceTaskSchemaVLatest.MaintenanceTask schema = mapper.toSchema(task);
 
-        // serialize schema
-        String serialized = serializer.serialize(schema);
+        schema.setTaskId(id);
 
         // create entity
         MaintenanceTaskEntity entity = new MaintenanceTaskEntity();
+
+
+
+        // serialize schema
+        String serialized = serializer.serialize(schema);
         entity.setAggregate(serialized);
         entity.setCreatedAt(LocalDateTime.now());
         entity.setUpdatedAt(LocalDateTime.now());
+        Log.info(entity.getAggregate());
 
         //presist
-        repository.persist(entity);
+        repository.persistAndFlush(entity);
+
 
         //retrun the domain model
         return mapper.toDomain(schema);

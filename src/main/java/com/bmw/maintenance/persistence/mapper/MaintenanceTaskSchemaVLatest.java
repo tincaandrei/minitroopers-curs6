@@ -4,8 +4,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import com.bmw.maintenance.commons.serialization.VersionedSchema;
-import com.bmw.maintenance.domain.TaskStatus;
-import com.bmw.maintenance.domain.TaskType;
+import com.bmw.maintenance.domain.enums.TaskStatus;
+import com.bmw.maintenance.domain.enums.TaskType;
 
 /**
  * Contains schema definitions for maintenance task persistence.

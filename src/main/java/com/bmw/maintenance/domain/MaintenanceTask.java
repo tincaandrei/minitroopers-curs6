@@ -1,9 +1,10 @@
 package com.bmw.maintenance.domain;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
+import com.bmw.maintenance.domain.enums.*;
+import lombok.*;
+
+import java.util.List;
+
 
 /**
  * Domain entity representing a maintenance task for a vehicle.
@@ -19,13 +20,17 @@ import lombok.Getter;
 @Builder
 @Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+
 public class MaintenanceTask {
+
 
     private Long taskId;
     private String vin;
     private TaskType type;
     private TaskStatus status;
     private String notes;
+    private MaintenanceDetails maintenanceDetails;
 
 
     /**
@@ -64,6 +69,35 @@ public class MaintenanceTask {
                 .build();
         task.validateBusinessRules();
         return task;
+    }
+
+
+
+
+    public static MaintenanceTask createTireService(String vin, String notes, TirePosition position, TireServiceType type){
+        MaintenanceTask task = MaintenanceTask.builder()
+                .vin(vin)
+                .type(TaskType.TIRE_SERVICE)
+                .status(TaskStatus.IN_PROGRESS)
+                .notes(notes)
+                .maintenanceDetails(new TireServiceDetails(type, position))
+                .build();
+        task.validateBusinessRules();
+        return task;
+
+    }
+
+    public static MaintenanceTask createDiagnosticScan(String vin, String notes, List<String> errorCodes, ScannerType scannerTypetype){
+        MaintenanceTask task = MaintenanceTask.builder()
+                .vin(vin)
+                .type(TaskType.DIAGNOSTIC_SCAN)
+                .status(TaskStatus.IN_PROGRESS)
+                .notes(notes)
+                .maintenanceDetails(new DiagnosticScanDetails(errorCodes, scannerTypetype))
+                .build();
+        task.validateBusinessRules();
+        return task;
+
     }
 
     /**

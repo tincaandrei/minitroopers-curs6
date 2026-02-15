@@ -1,7 +1,7 @@
 package com.bmw.maintenance.domaininteraction;
 
 import com.bmw.maintenance.domain.MaintenanceTask;
-import com.bmw.maintenance.domain.TaskStatus;
+import com.bmw.maintenance.domain.enums.TaskStatus;
 
 import java.util.List;
 

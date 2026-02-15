@@ -40,6 +40,25 @@ paths:
                   vin: "WBA3B5C50DF123456"
                   type: "BRAKE_INSPECTION"
                   notes: "Annual brake inspection"
+              tireService:
+                summary: Tire Service Task
+                value:
+                  vin: "WBA3B5C50DF123456"
+                  type: "TIRE_SERVICE"
+                  notes: "Rotate tires"
+                  additionalDetails:
+                    tirePosition: "ALL"
+                    tireServiceType: "TIRE_ROTATION"
+
+              diagnosticScan:
+                summary: Diagnostic Scan Task
+                value:
+                  vin: "WBA3B5C50DF123456"
+                  type: "DIAGNOSTIC_SCAN"
+                  notes: "Check engine light"
+                  additionalDetails:
+                    scannerType: "ADVANCED"
+                    errorCodes: [ "P0420", "P0300" ]
       responses:
         '201':
           description: Task created successfully
@@ -212,7 +231,14 @@ components:
           type: string
           description: Additional notes for the task
           example: "Customer reported squeaking noise"
-
+        additionalDetails:
+          description: |
+            Type-specific fields.
+            - For TIRE_SERVICE: must include tirePosition
+            - For DIAGNOSTIC_SCAN: must include scannerType and errorCodes
+          oneOf:
+            - $ref: '#/components/schemas/TireServiceAdditionalDetails'
+            - $ref: '#/components/schemas/DiagnosticScanAdditionalDetails'
     UpdateStatusRequest:
       type: object
       required:
@@ -255,6 +281,8 @@ components:
       enum:
         - OIL_CHANGE
         - BRAKE_INSPECTION
+        - TIRE_SERVICE
+        - DIAGNOSTIC_SCAN
       description: Type of maintenance task
 
     TaskStatus:
@@ -266,6 +294,53 @@ components:
         - PENDING
       description: Current status of the task
 
+    TirePosition:
+      type: string
+      enum:
+        - FRONT_LEFT
+        - FRONT_RIGHT
+        - REAR_LEFT
+        - REAR_RIGHT
+        - ALL
+      description: Tire position targeted by a tire service task
+
+    TireServiceType:
+      type: string
+      enum:
+        TIRE_ROTATION
+        TIRE_REPLACENMENT
+        TIRE_ALIGNMENT
+      description: Type of tire service operation
+
+    ScannerType:
+      type: string
+      enum:
+        - BASIC
+        - ADVANCED
+      description: Type of diagnostic scanner used for a diagnostic scan task
+
+    TireServiceAdditionalDetails:
+      type: object
+      required: [ tirePosition, tireServiceType ]
+      properties:
+        tirePosition:
+          $ref: '#/components/schemas/TirePosition'
+        tireServiceType:
+          $ref: '#/components/schemas/TireServiceType'
+
+    DiagnosticScanAdditionalDetails:
+      type: object
+      required: [ scannerType, errorCodes ]
+      properties:
+        scannerType:
+          $ref: '#/components/schemas/ScannerType'
+        errorCodes:
+          type: array
+          items:
+            type: string
+          description: List of diagnostic trouble codes (DTCs)
+
+
     ErrorResponse:
       type: object
       properties:
@@ -275,3 +350,4 @@ components:
         timestamp:
           type: string
           format: date-time
+

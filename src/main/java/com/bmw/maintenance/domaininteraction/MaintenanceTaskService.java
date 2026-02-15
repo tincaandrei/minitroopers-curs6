@@ -1,12 +1,18 @@
 package com.bmw.maintenance.domaininteraction;
 
 import com.bmw.maintenance.domain.MaintenanceTask;
-import com.bmw.maintenance.domain.TaskStatus;
-import com.bmw.maintenance.domain.TaskType;
+import com.bmw.maintenance.domain.creators.TaskCreator;
+import com.bmw.maintenance.domain.enums.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.BadRequestException;
 
 /**
  * Service for creating and managing maintenance tasks.
@@ -14,16 +20,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class MaintenanceTaskService {
 
-    private final MaintenanceTasks maintenanceTasks;
 
-    /**
-     * Creates a new service instance.
-     *
-     * @param maintenanceTasks backing repository
-     */
-    public MaintenanceTaskService(MaintenanceTasks maintenanceTasks) {
-        this.maintenanceTasks = maintenanceTasks;
-    }
+
+
 
     /**
      * Creates a maintenance task for a vehicle.
@@ -33,16 +32,28 @@ public class MaintenanceTaskService {
      * @param notes optional notes
      * @return created task id
      */
-    public Long createTask(String vin, TaskType type, String notes) {
-        MaintenanceTask task = switch (type) {
-            case OIL_CHANGE -> MaintenanceTask.createOilChange(vin, notes);
-            case BRAKE_INSPECTION -> MaintenanceTask.createBrakeInspection(vin, notes);
-        };
+    @Inject
+    Instance<TaskCreator> creators;
+    @Inject
+    MaintenanceTasks maintenanceTasks;
 
-        MaintenanceTask created = maintenanceTasks.create(task);
-        return created.getTaskId();
+    public Long createTask(String vin, TaskType type, String notes, Map<String, Object> additionalDetails) {
+
+        TaskCreator creator = null;
+        for (TaskCreator c : creators) {
+            if (c.whatTask() == type) {
+                creator = c;
+                break;
+            }
+        }
+        if (creator == null) {
+            throw new BadRequestException("No creator found for task " + type);
+        }
+        MaintenanceTask task = creator.create(vin, notes, additionalDetails == null ? Map.of() : additionalDetails);
+        return maintenanceTasks.create(task).getTaskId();
+
+
     }
-
     /**
      * Updates the status of a task.
      *

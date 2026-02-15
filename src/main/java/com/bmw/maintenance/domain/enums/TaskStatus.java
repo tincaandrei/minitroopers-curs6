@@ -1,4 +1,4 @@
-package com.bmw.maintenance.domain;
+package com.bmw.maintenance.domain.enums;
 
 /**
  * Represents the lifecycle status of a maintenance task.
